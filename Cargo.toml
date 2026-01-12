@@ -1,0 +1,15 @@
+[package]
+name = "csvpeek"
+version = "0.1.0"
+edition = "2024"
+description = "Fast CSV insights from the command line"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yourname/csvpeek"
+keywords = ["csv", "cli", "data", "summary", "statistics"]
+categories = ["command-line-utilities", "parsing"]
+
+[[bin]]
+name = "csvp"
+path = "src/main.rs"
+
+[dependencies]
