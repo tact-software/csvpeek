@@ -44,10 +44,12 @@ pub struct CsvReader {
     reader: Reader<std::io::Cursor<String>>,
     headers: Option<StringRecord>,
     generated_headers: bool,
+    #[allow(dead_code)] // Reserved for future use (e.g., displaying detected encoding)
     detected_encoding: String,
 }
 
 impl CsvReader {
+    #[allow(dead_code)] // Convenience method for future use
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
         Self::from_path_with_options(path, CsvOptions::new())
     }
@@ -124,6 +126,7 @@ impl CsvReader {
         self.reader.records()
     }
 
+    #[allow(dead_code)] // Reserved for future use
     pub fn detected_encoding(&self) -> &str {
         &self.detected_encoding
     }
@@ -197,6 +200,7 @@ fn lookup_encoding(name: &str) -> Result<&'static Encoding> {
 }
 
 /// List of supported encodings for help text
+#[allow(dead_code)] // Reserved for future use in help/documentation
 pub fn supported_encodings() -> &'static str {
     "utf-8, shift_jis (cp932), euc-jp, iso-2022-jp, gbk (gb2312), gb18030, big5, euc-kr, latin1 (windows-1252), etc."
 }

@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use csv::StringRecord;
 
-use crate::error::{find_similar_column, ColumnSuggestion, CsvpeekError};
+use crate::error::{ColumnSuggestion, CsvpeekError, find_similar_column};
 
 #[derive(Parser, Debug)]
 #[command(name = "csvp")]
@@ -131,9 +131,10 @@ fn parse_range(s: &str, headers: &[String]) -> Result<Option<Vec<String>>> {
         let start: usize = start_str.trim().parse().map_err(|_| {
             CsvpeekError::InvalidFilter(format!("Invalid range start: {}", start_str))
         })?;
-        let end: usize = end_str.trim().parse().map_err(|_| {
-            CsvpeekError::InvalidFilter(format!("Invalid range end: {}", end_str))
-        })?;
+        let end: usize = end_str
+            .trim()
+            .parse()
+            .map_err(|_| CsvpeekError::InvalidFilter(format!("Invalid range end: {}", end_str)))?;
 
         if end >= headers.len() {
             return Err(CsvpeekError::ColumnIndexOutOfRange {
@@ -152,9 +153,10 @@ fn parse_range(s: &str, headers: &[String]) -> Result<Option<Vec<String>>> {
         let start: usize = start_str.trim().parse().map_err(|_| {
             CsvpeekError::InvalidFilter(format!("Invalid range start: {}", start_str))
         })?;
-        let end: usize = end_str.trim().parse().map_err(|_| {
-            CsvpeekError::InvalidFilter(format!("Invalid range end: {}", end_str))
-        })?;
+        let end: usize = end_str
+            .trim()
+            .parse()
+            .map_err(|_| CsvpeekError::InvalidFilter(format!("Invalid range end: {}", end_str)))?;
 
         if end > headers.len() {
             return Err(CsvpeekError::ColumnIndexOutOfRange {

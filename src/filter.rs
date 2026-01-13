@@ -102,15 +102,14 @@ fn find_operator(s: &str, op: &str) -> Option<usize> {
     let mut depth = 0;
     let mut in_string = false;
     let mut escape = false;
-    let chars: Vec<char> = s.chars().collect();
 
-    for i in 0..chars.len() {
+    for (i, c) in s.char_indices() {
         if escape {
             escape = false;
             continue;
         }
 
-        match chars[i] {
+        match c {
             '\\' => escape = true,
             '"' => in_string = !in_string,
             '(' if !in_string => depth += 1,
@@ -183,7 +182,7 @@ fn parse_func_args(s: &str) -> Result<(String, String)> {
     let mut in_string = false;
     let mut escape = false;
 
-    for (i, c) in s.chars().enumerate() {
+    for (i, c) in s.char_indices() {
         if escape {
             escape = false;
             continue;
@@ -236,9 +235,14 @@ fn parse_array(s: &str) -> Result<Vec<String>> {
 }
 
 fn parse_comparison(s: &str, columns: &std::collections::HashMap<String, usize>) -> Result<Expr> {
-    let ops = [("==", CompareOp::Eq), ("!=", CompareOp::Ne),
-               ("<=", CompareOp::Le), (">=", CompareOp::Ge),
-               ("<", CompareOp::Lt), (">", CompareOp::Gt)];
+    let ops = [
+        ("==", CompareOp::Eq),
+        ("!=", CompareOp::Ne),
+        ("<=", CompareOp::Le),
+        (">=", CompareOp::Ge),
+        ("<", CompareOp::Lt),
+        (">", CompareOp::Gt),
+    ];
 
     for (op_str, op) in ops.iter() {
         if let Some(pos) = s.find(op_str) {

@@ -87,10 +87,13 @@ pub fn parse_value(s: &str) -> (DataType, Value) {
     }
 
     // Try float
-    if let Ok(f) = trimmed.parse::<f64>() {
-        if f.is_finite() {
-            return (DataType::Float, Value::Float(f.to_bits() as i64, f.to_bits()));
-        }
+    if let Ok(f) = trimmed.parse::<f64>()
+        && f.is_finite()
+    {
+        return (
+            DataType::Float,
+            Value::Float(f.to_bits() as i64, f.to_bits()),
+        );
     }
 
     (DataType::String, Value::String)

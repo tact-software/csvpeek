@@ -1,7 +1,7 @@
 use anyhow::Result;
 use csv::StringRecord;
 
-use crate::types::{is_null, parse_value, ColumnSchema, DataType};
+use crate::types::{ColumnSchema, DataType, is_null, parse_value};
 
 pub struct SchemaInferrer {
     columns: Vec<ColumnTypeAccumulator>,
@@ -44,9 +44,7 @@ impl ColumnTypeAccumulator {
 
         // Collect sample values (first N unique non-null values)
         let trimmed = value.trim().to_string();
-        if self.sample_values.len() < MAX_SAMPLE_VALUES
-            && !self.sample_values.contains(&trimmed)
-        {
+        if self.sample_values.len() < MAX_SAMPLE_VALUES && !self.sample_values.contains(&trimmed) {
             self.sample_values.push(trimmed);
         }
 
