@@ -12,6 +12,9 @@ pub enum CsvpeekError {
         suggestion: Option<ColumnSuggestion>,
     },
 
+    #[error("Column index out of range: {index} (max: {max})")]
+    ColumnIndexOutOfRange { index: usize, max: usize },
+
     #[error("Invalid filter expression: {0}")]
     InvalidFilter(String),
 

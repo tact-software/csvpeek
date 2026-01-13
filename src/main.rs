@@ -31,18 +31,37 @@ fn main() -> Result<()> {
 
 mod commands {
     use super::*;
-    use crate::csv_reader::CsvReader;
+    use crate::csv_reader::{CsvOptions, CsvReader};
     use crate::filter::Filter;
     use crate::output::{OutputFormat, Renderer};
     use crate::schema::SchemaInferrer;
     use crate::stats::StatsCollector;
+
+    fn build_csv_options(cli: &Cli) -> CsvOptions {
+        let delimiter = parse_delimiter(&cli.delimiter);
+        CsvOptions::new()
+            .with_delimiter(delimiter)
+            .with_no_header(cli.no_header)
+    }
+
+    fn parse_delimiter(s: &str) -> u8 {
+        match s.to_lowercase().as_str() {
+            "tab" | "\\t" | "\t" => b'\t',
+            "comma" | "," => b',',
+            "semicolon" | ";" => b';',
+            "pipe" | "|" => b'|',
+            "space" | " " => b' ',
+            _ => s.as_bytes().first().copied().unwrap_or(b','),
+        }
+    }
 
     pub fn run_summary(cli: &Cli, args: &cli::SummaryArgs) -> Result<()> {
         let file_path = cli.file.as_ref().ok_or_else(|| {
             anyhow::anyhow!("FILE is required")
         })?;
 
-        let mut reader = CsvReader::from_path(file_path)?;
+        let options = build_csv_options(cli);
+        let mut reader = CsvReader::from_path_with_options(file_path, options)?;
         let headers = reader.headers()?.clone();
 
         // Determine columns to process
@@ -83,7 +102,8 @@ mod commands {
 
         // Render output
         let format = args.format.as_deref().unwrap_or("table");
-        let renderer = Renderer::new(OutputFormat::from_str(format)?);
+        let renderer = Renderer::new(OutputFormat::from_str(format)?)
+            .with_output(cli.output.clone());
         renderer.render_summary(
             file_path,
             total_rows,
@@ -95,12 +115,13 @@ mod commands {
         Ok(())
     }
 
-    pub fn run_schema(cli: &Cli, _args: &cli::SchemaArgs) -> Result<()> {
+    pub fn run_schema(cli: &Cli, args: &cli::SchemaArgs) -> Result<()> {
         let file_path = cli.file.as_ref().ok_or_else(|| {
             anyhow::anyhow!("FILE is required")
         })?;
 
-        let mut reader = CsvReader::from_path(file_path)?;
+        let options = build_csv_options(cli);
+        let mut reader = CsvReader::from_path_with_options(file_path, options)?;
         let headers = reader.headers()?.clone();
 
         let mut inferrer = SchemaInferrer::new(&headers);
@@ -112,7 +133,9 @@ mod commands {
 
         let schema = inferrer.finalize();
 
-        let renderer = Renderer::new(OutputFormat::Table);
+        let format = args.format.as_deref().unwrap_or("table");
+        let renderer = Renderer::new(OutputFormat::from_str(format)?)
+            .with_output(cli.output.clone());
         renderer.render_schema(file_path, &schema)?;
 
         Ok(())

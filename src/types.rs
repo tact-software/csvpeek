@@ -30,21 +30,13 @@ pub struct ColumnStats {
     pub min: Option<String>,
     pub max: Option<String>,
     pub mean: Option<f64>,
-}
-
-impl ColumnStats {
-    pub fn new(name: String) -> Self {
-        Self {
-            name,
-            data_type: DataType::String,
-            count: 0,
-            null_count: 0,
-            null_rate: 0.0,
-            min: None,
-            max: None,
-            mean: None,
-        }
-    }
+    // v1.1 numeric statistics
+    pub sum: Option<f64>,
+    pub std: Option<f64>,
+    // v1.1 string statistics
+    pub min_len: Option<usize>,
+    pub max_len: Option<usize>,
+    pub unique_count: Option<usize>,
 }
 
 #[derive(Debug, Clone, Serialize)]

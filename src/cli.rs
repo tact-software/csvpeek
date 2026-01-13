@@ -14,6 +14,18 @@ pub struct Cli {
     /// CSV file path
     #[arg(global = true)]
     pub file: Option<String>,
+
+    /// Field delimiter character
+    #[arg(long, short = 'd', global = true, default_value = ",")]
+    pub delimiter: String,
+
+    /// CSV has no header row (columns will be named col0, col1, ...)
+    #[arg(long, global = true, default_value = "false")]
+    pub no_header: bool,
+
+    /// Output file path (default: stdout)
+    #[arg(long, short = 'o', global = true)]
+    pub output: Option<String>,
 }
 
 impl Cli {
@@ -63,7 +75,21 @@ pub fn parse_columns(cols_str: &str, headers: &StringRecord) -> Result<Vec<Strin
             continue;
         }
 
-        // Check if column exists
+        // Try to parse as index first
+        if let Ok(idx) = col.parse::<usize>() {
+            if idx < header_vec.len() {
+                result.push(header_vec[idx].clone());
+                continue;
+            } else {
+                return Err(CsvpeekError::ColumnIndexOutOfRange {
+                    index: idx,
+                    max: header_vec.len() - 1,
+                }
+                .into());
+            }
+        }
+
+        // Check if column name exists
         if header_vec.iter().any(|h| h == col) {
             result.push(col.to_string());
         } else {

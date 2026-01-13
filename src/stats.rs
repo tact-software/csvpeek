@@ -1,5 +1,6 @@
 use anyhow::Result;
 use csv::StringRecord;
+use std::collections::HashSet;
 
 use crate::types::{is_null, parse_value, ColumnStats, DataType};
 
@@ -16,6 +17,7 @@ struct ColumnAccumulator {
 
     // Numeric stats
     sum: f64,
+    sum_squares: f64, // For standard deviation
     numeric_count: u64,
     min_numeric: Option<f64>,
     max_numeric: Option<f64>,
@@ -23,6 +25,11 @@ struct ColumnAccumulator {
     // String stats (for min/max)
     min_string: Option<String>,
     max_string: Option<String>,
+
+    // v1.1 string stats
+    min_len: Option<usize>,
+    max_len: Option<usize>,
+    unique_values: HashSet<String>,
 }
 
 impl ColumnAccumulator {
@@ -33,11 +40,15 @@ impl ColumnAccumulator {
             null_count: 0,
             data_type: None,
             sum: 0.0,
+            sum_squares: 0.0,
             numeric_count: 0,
             min_numeric: None,
             max_numeric: None,
             min_string: None,
             max_string: None,
+            min_len: None,
+            max_len: None,
+            unique_values: HashSet::new(),
         }
     }
 
@@ -49,7 +60,8 @@ impl ColumnAccumulator {
             return;
         }
 
-        let (dtype, _) = parse_value(value);
+        let trimmed = value.trim();
+        let (dtype, _) = parse_value(trimmed);
 
         // Update data type (promote to more general type if needed)
         self.data_type = Some(match (self.data_type, dtype) {
@@ -65,8 +77,9 @@ impl ColumnAccumulator {
         });
 
         // Update numeric stats if applicable
-        if let Ok(num) = value.trim().parse::<f64>() {
+        if let Ok(num) = trimmed.parse::<f64>() {
             self.sum += num;
+            self.sum_squares += num * num;
             self.numeric_count += 1;
             self.min_numeric = Some(
                 self.min_numeric
@@ -79,22 +92,28 @@ impl ColumnAccumulator {
         }
 
         // Update string stats
-        let trimmed = value.trim().to_string();
+        let trimmed_str = trimmed.to_string();
+        let len = trimmed.chars().count();
+
+        self.min_len = Some(self.min_len.map_or(len, |m| m.min(len)));
+        self.max_len = Some(self.max_len.map_or(len, |m| m.max(len)));
+        self.unique_values.insert(trimmed_str.clone());
+
         self.min_string = Some(match &self.min_string {
-            None => trimmed.clone(),
+            None => trimmed_str.clone(),
             Some(m) => {
-                if trimmed < *m {
-                    trimmed.clone()
+                if trimmed_str < *m {
+                    trimmed_str.clone()
                 } else {
                     m.clone()
                 }
             }
         });
         self.max_string = Some(match &self.max_string {
-            None => trimmed,
+            None => trimmed_str,
             Some(m) => {
-                if trimmed > *m {
-                    trimmed
+                if trimmed_str > *m {
+                    trimmed_str
                 } else {
                     m.clone()
                 }
@@ -112,20 +131,38 @@ impl ColumnAccumulator {
 
         let data_type = self.data_type.unwrap_or(DataType::String);
 
-        let (min, max, mean) = match data_type {
+        let (min, max, mean, sum, std) = match data_type {
             DataType::Integer | DataType::Float => {
                 let mean = if self.numeric_count > 0 {
                     Some(self.sum / self.numeric_count as f64)
                 } else {
                     None
                 };
+
+                // Calculate standard deviation
+                let std = if self.numeric_count > 1 {
+                    let n = self.numeric_count as f64;
+                    let variance = (self.sum_squares - (self.sum * self.sum) / n) / (n - 1.0);
+                    Some(variance.sqrt())
+                } else {
+                    None
+                };
+
+                let sum = if self.numeric_count > 0 {
+                    Some(self.sum)
+                } else {
+                    None
+                };
+
                 (
                     self.min_numeric.map(|v| format_number(v, data_type)),
                     self.max_numeric.map(|v| format_number(v, data_type)),
                     mean,
+                    sum,
+                    std,
                 )
             }
-            _ => (self.min_string, self.max_string, None),
+            _ => (self.min_string, self.max_string, None, None, None),
         };
 
         ColumnStats {
@@ -137,6 +174,11 @@ impl ColumnAccumulator {
             min,
             max,
             mean,
+            sum,
+            std,
+            min_len: self.min_len,
+            max_len: self.max_len,
+            unique_count: Some(self.unique_values.len()),
         }
     }
 }
