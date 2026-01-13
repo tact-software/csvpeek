@@ -1,0 +1,62 @@
+[tools]
+rust = "1.92"
+
+[tasks.build]
+description = "Build the project"
+run = "cargo build"
+
+[tasks.release]
+description = "Build release binary"
+run = "cargo build --release"
+
+[tasks.test]
+description = "Run all tests"
+run = "cargo test"
+
+[tasks."test:unit"]
+description = "Run unit tests only"
+run = "cargo test --lib"
+
+[tasks."test:integration"]
+description = "Run integration tests only"
+run = "cargo test --test integration_tests"
+
+[tasks.check]
+description = "Check code without building"
+run = "cargo check"
+
+[tasks.clippy]
+description = "Run clippy linter"
+run = "cargo clippy -- -D warnings"
+
+[tasks.fmt]
+description = "Format code"
+run = "cargo fmt"
+
+[tasks."fmt:check"]
+description = "Check code formatting"
+run = "cargo fmt -- --check"
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = "cargo clean"
+
+[tasks.doc]
+description = "Generate documentation"
+run = "cargo doc --no-deps --open"
+
+[tasks.run]
+description = "Run the CLI with arguments"
+run = "cargo run --"
+
+[tasks.install]
+description = "Install locally"
+run = "cargo install --path ."
+
+[tasks.ci]
+description = "Run all CI checks"
+depends = ["fmt:check", "clippy", "test"]
+
+[tasks.dev]
+description = "Development: check, test, and build"
+depends = ["check", "test", "build"]

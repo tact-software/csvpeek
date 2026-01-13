@@ -1,0 +1,8 @@
+name,age,income,country,active
+Alice,30,50000.5,JP,true
+Bob,25,45000,US,false
+Charlie,35,,JP,true
+Diana,28,62000.75,UK,false
+Eve,,55000,JP,
+Frank,42,78000,US,true
+Grace,31,51000,JP,false
