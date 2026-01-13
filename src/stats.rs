@@ -3,7 +3,7 @@ use csv::StringRecord;
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 
-use crate::types::{is_null, parse_value, ColumnStats, DataType};
+use crate::types::{ColumnStats, DataType, is_null, parse_value};
 
 pub struct StatsCollector {
     columns: Vec<ColumnAccumulator>,
@@ -33,7 +33,7 @@ struct ColumnAccumulator {
     unique_values: HashSet<String>,
 
     // v1.2 stats
-    numeric_values: Vec<f64>,        // For median/percentile
+    numeric_values: Vec<f64>,             // For median/percentile
     value_counts: HashMap<String, usize>, // For top_n
 }
 
@@ -144,7 +144,8 @@ impl ColumnAccumulator {
 
         // v1.2: Calculate percentiles (median, p25, p75)
         let (median, p25, p75) = if !self.numeric_values.is_empty() {
-            self.numeric_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            self.numeric_values
+                .sort_by(|a, b| a.partial_cmp(b).unwrap());
             (
                 Some(percentile(&self.numeric_values, 50.0)),
                 Some(percentile(&self.numeric_values, 25.0)),
@@ -244,7 +245,10 @@ fn percentile(sorted_data: &[f64], p: f64) -> f64 {
 fn format_number(v: f64, dtype: DataType) -> String {
     match dtype {
         DataType::Integer => format!("{}", v as i64),
-        _ => format!("{:.6}", v).trim_end_matches('0').trim_end_matches('.').to_string(),
+        _ => format!("{:.6}", v)
+            .trim_end_matches('0')
+            .trim_end_matches('.')
+            .to_string(),
     }
 }
 

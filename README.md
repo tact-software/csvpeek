@@ -58,9 +58,6 @@ csvp summary -f json data.csv
 
 # Specify encoding
 csvp -e shift_jis data.csv
-
-# Use with pipes
-cat data.csv | csvp
 ```
 
 ## Commands

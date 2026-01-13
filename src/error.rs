@@ -18,9 +18,6 @@ pub enum CsvpeekError {
     #[error("Invalid filter expression: {0}")]
     InvalidFilter(String),
 
-    #[error("Parse error at position {position}: {message}")]
-    ParseError { position: usize, message: String },
-
     #[error("CSV error: {0}")]
     CsvError(#[from] csv::Error),
 
@@ -77,11 +74,11 @@ fn levenshtein_distance(a: &str, b: &str) -> usize {
 
     let mut dp = vec![vec![0usize; n + 1]; m + 1];
 
-    for i in 0..=m {
-        dp[i][0] = i;
+    for (i, row) in dp.iter_mut().enumerate() {
+        row[0] = i;
     }
-    for j in 0..=n {
-        dp[0][j] = j;
+    for (j, cell) in dp[0].iter_mut().enumerate() {
+        *cell = j;
     }
 
     for i in 1..=m {

@@ -21,7 +21,10 @@ impl OutputFormat {
             "json" => Ok(OutputFormat::Json),
             "ndjson" => Ok(OutputFormat::NdJson),
             "csv" => Ok(OutputFormat::Csv),
-            _ => Err(anyhow::anyhow!("Unknown output format: {}. Supported: table, json, ndjson, csv", s)),
+            _ => Err(anyhow::anyhow!(
+                "Unknown output format: {}. Supported: table, json, ndjson, csv",
+                s
+            )),
         }
     }
 }
@@ -123,7 +126,14 @@ impl Renderer {
         // Header info with optional color
         if use_color {
             writeln!(w, "{} {}", "file:".cyan(), file)?;
-            writeln!(w, "{} {} ({} {})", "rows:".cyan(), total_rows, "matched:".cyan(), matched_rows)?;
+            writeln!(
+                w,
+                "{} {} ({} {})",
+                "rows:".cyan(),
+                total_rows,
+                "matched:".cyan(),
+                matched_rows
+            )?;
             if let Some(f) = filter {
                 writeln!(w, "{} {}", "filter:".cyan(), f)?;
             }
@@ -165,9 +175,21 @@ impl Renderer {
                 Cell::new(stat.unique_count.map_or("-".to_string(), |v| v.to_string())),
                 Cell::new(stat.min.as_deref().unwrap_or("-")),
                 Cell::new(stat.max.as_deref().unwrap_or("-")),
-                Cell::new(stat.mean.map(|m| format!("{:.2}", m)).unwrap_or_else(|| "-".to_string())),
-                Cell::new(stat.median.map(|m| format!("{:.2}", m)).unwrap_or_else(|| "-".to_string())),
-                Cell::new(stat.std.map(|s| format!("{:.2}", s)).unwrap_or_else(|| "-".to_string())),
+                Cell::new(
+                    stat.mean
+                        .map(|m| format!("{:.2}", m))
+                        .unwrap_or_else(|| "-".to_string()),
+                ),
+                Cell::new(
+                    stat.median
+                        .map(|m| format!("{:.2}", m))
+                        .unwrap_or_else(|| "-".to_string()),
+                ),
+                Cell::new(
+                    stat.std
+                        .map(|s| format!("{:.2}", s))
+                        .unwrap_or_else(|| "-".to_string()),
+                ),
             ]);
         }
 
@@ -180,7 +202,8 @@ impl Renderer {
             writeln!(w, "Top values:")?;
             for stat in stats {
                 if let Some(ref top) = stat.top_values {
-                    let top_str: Vec<String> = top.iter().map(|(v, c)| format!("{}({})", v, c)).collect();
+                    let top_str: Vec<String> =
+                        top.iter().map(|(v, c)| format!("{}({})", v, c)).collect();
                     writeln!(w, "  {}: {}", stat.name, top_str.join(", "))?;
                 }
             }
@@ -207,7 +230,10 @@ impl Renderer {
 
     fn render_summary_csv(&self, stats: &[ColumnStats]) -> Result<()> {
         let mut w = self.get_writer()?;
-        writeln!(w, "column,type,count,null_count,null_rate,unique_count,min,max,mean,median,p25,p75,sum,std,min_len,max_len")?;
+        writeln!(
+            w,
+            "column,type,count,null_count,null_rate,unique_count,min,max,mean,median,p25,p75,sum,std,min_len,max_len"
+        )?;
         for stat in stats {
             writeln!(
                 w,
@@ -218,8 +244,8 @@ impl Renderer {
                 stat.null_count,
                 stat.null_rate,
                 stat.unique_count.map_or(String::new(), |v| v.to_string()),
-                stat.min.as_deref().map_or(String::new(), |s| escape_csv(s)),
-                stat.max.as_deref().map_or(String::new(), |s| escape_csv(s)),
+                stat.min.as_deref().map_or(String::new(), escape_csv),
+                stat.max.as_deref().map_or(String::new(), escape_csv),
                 stat.mean.map_or(String::new(), |v| format!("{:.6}", v)),
                 stat.median.map_or(String::new(), |v| format!("{:.6}", v)),
                 stat.p25.map_or(String::new(), |v| format!("{:.6}", v)),
@@ -305,7 +331,10 @@ impl Renderer {
 
     fn render_schema_csv(&self, schema: &[ColumnSchema]) -> Result<()> {
         let mut w = self.get_writer()?;
-        writeln!(w, "column,type,null_count,total_count,null_rate,sample_values")?;
+        writeln!(
+            w,
+            "column,type,null_count,total_count,null_rate,sample_values"
+        )?;
         for col in schema {
             let samples = col.sample_values.join("; ");
             writeln!(

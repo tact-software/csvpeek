@@ -21,9 +21,7 @@ impl ProgressTracker {
         }
 
         // Get file size to estimate progress
-        let file_size = fs::metadata(file_path)
-            .map(|m| m.len())
-            .unwrap_or(0);
+        let file_size = fs::metadata(file_path).map(|m| m.len()).unwrap_or(0);
 
         // Only show progress bar for files > 1MB
         if file_size < 1_000_000 {
@@ -57,10 +55,10 @@ impl ProgressTracker {
         let record_bytes: usize = record.iter().map(|f| f.len() + 1).sum();
         self.bytes_read += record_bytes as u64;
 
-        if let Some(ref bar) = self.bar {
-            if self.count % self.update_interval == 0 {
-                bar.set_position(self.bytes_read);
-            }
+        if let Some(ref bar) = self.bar
+            && self.count.is_multiple_of(self.update_interval)
+        {
+            bar.set_position(self.bytes_read);
         }
     }
 

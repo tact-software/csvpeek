@@ -44,14 +44,9 @@ pub struct CsvReader {
     reader: Reader<std::io::Cursor<String>>,
     headers: Option<StringRecord>,
     generated_headers: bool,
-    detected_encoding: String,
 }
 
 impl CsvReader {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
-        Self::from_path_with_options(path, CsvOptions::new())
-    }
-
     pub fn from_path_with_options<P: AsRef<Path>>(path: P, options: CsvOptions) -> Result<Self> {
         let path = path.as_ref();
 
@@ -65,7 +60,7 @@ impl CsvReader {
         file.read_to_end(&mut bytes)?;
 
         // Determine encoding
-        let (content, detected_encoding) = if let Some(ref enc_name) = options.encoding {
+        let content = if let Some(ref enc_name) = options.encoding {
             // Explicit encoding specified
             let encoding = lookup_encoding(enc_name)?;
             let (decoded, _, had_errors) = encoding.decode(&bytes);
@@ -75,11 +70,10 @@ impl CsvReader {
                     enc_name
                 );
             }
-            (decoded.into_owned(), encoding.name().to_string())
+            decoded.into_owned()
         } else {
             // Auto-detect encoding
-            let (content, encoding_name) = detect_and_decode(&bytes);
-            (content, encoding_name)
+            detect_and_decode(&bytes)
         };
 
         let cursor = std::io::Cursor::new(content);
@@ -93,7 +87,6 @@ impl CsvReader {
             reader,
             headers: None,
             generated_headers: options.no_header,
-            detected_encoding,
         })
     }
 
@@ -123,34 +116,29 @@ impl CsvReader {
     pub fn records(&mut self) -> impl Iterator<Item = Result<StringRecord, csv::Error>> + '_ {
         self.reader.records()
     }
-
-    pub fn detected_encoding(&self) -> &str {
-        &self.detected_encoding
-    }
 }
 
 /// Detect encoding and decode bytes to UTF-8 string
-fn detect_and_decode(bytes: &[u8]) -> (String, String) {
+fn detect_and_decode(bytes: &[u8]) -> String {
     // Check for BOM first
     if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
         // UTF-8 BOM
-        let content = String::from_utf8_lossy(&bytes[3..]).into_owned();
-        return (content, "UTF-8".to_string());
+        return String::from_utf8_lossy(&bytes[3..]).into_owned();
     }
     if bytes.starts_with(&[0xFF, 0xFE]) {
         // UTF-16 LE BOM
         let (decoded, _, _) = encoding_rs::UTF_16LE.decode(&bytes[2..]);
-        return (decoded.into_owned(), "UTF-16LE".to_string());
+        return decoded.into_owned();
     }
     if bytes.starts_with(&[0xFE, 0xFF]) {
         // UTF-16 BE BOM
         let (decoded, _, _) = encoding_rs::UTF_16BE.decode(&bytes[2..]);
-        return (decoded.into_owned(), "UTF-16BE".to_string());
+        return decoded.into_owned();
     }
 
     // Try UTF-8 first (most common)
     if let Ok(s) = std::str::from_utf8(bytes) {
-        return (s.to_string(), "UTF-8".to_string());
+        return s.to_string();
     }
 
     // Use chardetng for detection
@@ -159,7 +147,7 @@ fn detect_and_decode(bytes: &[u8]) -> (String, String) {
     let encoding = detector.guess(None, true);
 
     let (decoded, _, _) = encoding.decode(bytes);
-    (decoded.into_owned(), encoding.name().to_string())
+    decoded.into_owned()
 }
 
 /// Look up encoding by name
@@ -194,9 +182,4 @@ fn lookup_encoding(name: &str) -> Result<&'static Encoding> {
     };
 
     Ok(encoding)
-}
-
-/// List of supported encodings for help text
-pub fn supported_encodings() -> &'static str {
-    "utf-8, shift_jis (cp932), euc-jp, iso-2022-jp, gbk (gb2312), gb18030, big5, euc-kr, latin1 (windows-1252), etc."
 }

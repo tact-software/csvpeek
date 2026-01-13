@@ -59,9 +59,10 @@ mod commands {
     }
 
     pub fn run_summary(cli: &Cli, args: &cli::SummaryArgs) -> Result<()> {
-        let file_path = cli.file.as_ref().ok_or_else(|| {
-            anyhow::anyhow!("FILE is required")
-        })?;
+        let file_path = cli
+            .file
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("FILE is required"))?;
 
         let options = build_csv_options(cli);
         let mut reader = CsvReader::from_path_with_options(file_path, options)?;
@@ -95,10 +96,10 @@ mod commands {
             progress.update(&record);
 
             // Apply filter
-            if let Some(ref f) = filter {
-                if !f.matches(&record, &headers)? {
-                    continue;
-                }
+            if let Some(ref f) = filter
+                && !f.matches(&record, &headers)?
+            {
+                continue;
             }
 
             matched_rows += 1;
@@ -126,9 +127,10 @@ mod commands {
     }
 
     pub fn run_schema(cli: &Cli, args: &cli::SchemaArgs) -> Result<()> {
-        let file_path = cli.file.as_ref().ok_or_else(|| {
-            anyhow::anyhow!("FILE is required")
-        })?;
+        let file_path = cli
+            .file
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("FILE is required"))?;
 
         let options = build_csv_options(cli);
         let mut reader = CsvReader::from_path_with_options(file_path, options)?;
