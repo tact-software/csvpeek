@@ -30,6 +30,10 @@ pub struct Cli {
     /// Suppress progress display
     #[arg(long, short = 'q', global = true, default_value = "false")]
     pub quiet: bool,
+
+    /// Color output control (auto, always, never)
+    #[arg(long, global = true, default_value = "auto")]
+    pub color: String,
 }
 
 impl Cli {
@@ -79,6 +83,12 @@ pub fn parse_columns(cols_str: &str, headers: &StringRecord) -> Result<Vec<Strin
             continue;
         }
 
+        // Check for range syntax (e.g., 0..5 or 0..=5)
+        if let Some(range_cols) = parse_range(col, &header_vec)? {
+            result.extend(range_cols);
+            continue;
+        }
+
         // Try to parse as index first
         if let Ok(idx) = col.parse::<usize>() {
             if idx < header_vec.len() {
@@ -108,4 +118,50 @@ pub fn parse_columns(cols_str: &str, headers: &StringRecord) -> Result<Vec<Strin
     }
 
     Ok(result)
+}
+
+fn parse_range(s: &str, headers: &[String]) -> Result<Option<Vec<String>>> {
+    // Check for inclusive range (0..=5)
+    if let Some((start_str, end_str)) = s.split_once("..=") {
+        let start: usize = start_str.trim().parse().map_err(|_| {
+            CsvpeekError::InvalidFilter(format!("Invalid range start: {}", start_str))
+        })?;
+        let end: usize = end_str.trim().parse().map_err(|_| {
+            CsvpeekError::InvalidFilter(format!("Invalid range end: {}", end_str))
+        })?;
+
+        if end >= headers.len() {
+            return Err(CsvpeekError::ColumnIndexOutOfRange {
+                index: end,
+                max: headers.len() - 1,
+            }
+            .into());
+        }
+
+        let cols: Vec<String> = (start..=end).map(|i| headers[i].clone()).collect();
+        return Ok(Some(cols));
+    }
+
+    // Check for exclusive range (0..5)
+    if let Some((start_str, end_str)) = s.split_once("..") {
+        let start: usize = start_str.trim().parse().map_err(|_| {
+            CsvpeekError::InvalidFilter(format!("Invalid range start: {}", start_str))
+        })?;
+        let end: usize = end_str.trim().parse().map_err(|_| {
+            CsvpeekError::InvalidFilter(format!("Invalid range end: {}", end_str))
+        })?;
+
+        if end > headers.len() {
+            return Err(CsvpeekError::ColumnIndexOutOfRange {
+                index: end - 1,
+                max: headers.len() - 1,
+            }
+            .into());
+        }
+
+        let cols: Vec<String> = (start..end).map(|i| headers[i].clone()).collect();
+        return Ok(Some(cols));
+    }
+
+    Ok(None)
 }

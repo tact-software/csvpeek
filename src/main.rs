@@ -34,7 +34,7 @@ mod commands {
     use super::*;
     use crate::csv_reader::{CsvOptions, CsvReader};
     use crate::filter::Filter;
-    use crate::output::{OutputFormat, Renderer};
+    use crate::output::{ColorMode, OutputFormat, Renderer};
     use crate::progress::ProgressTracker;
     use crate::schema::SchemaInferrer;
     use crate::stats::StatsCollector;
@@ -111,7 +111,8 @@ mod commands {
         // Render output
         let format = args.format.as_deref().unwrap_or("table");
         let renderer = Renderer::new(OutputFormat::from_str(format)?)
-            .with_output(cli.output.clone());
+            .with_output(cli.output.clone())
+            .with_color(ColorMode::from_str(&cli.color));
         renderer.render_summary(
             file_path,
             total_rows,
@@ -146,7 +147,8 @@ mod commands {
 
         let format = args.format.as_deref().unwrap_or("table");
         let renderer = Renderer::new(OutputFormat::from_str(format)?)
-            .with_output(cli.output.clone());
+            .with_output(cli.output.clone())
+            .with_color(ColorMode::from_str(&cli.color));
         renderer.render_schema(file_path, &schema)?;
 
         Ok(())

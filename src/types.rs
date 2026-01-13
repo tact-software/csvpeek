@@ -37,6 +37,11 @@ pub struct ColumnStats {
     pub min_len: Option<usize>,
     pub max_len: Option<usize>,
     pub unique_count: Option<usize>,
+    // v1.2 statistics
+    pub median: Option<f64>,
+    pub p25: Option<f64>,
+    pub p75: Option<f64>,
+    pub top_values: Option<Vec<(String, usize)>>,
 }
 
 #[derive(Debug, Clone, Serialize)]

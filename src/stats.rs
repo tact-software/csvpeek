@@ -1,6 +1,6 @@
 use anyhow::Result;
 use csv::StringRecord;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::types::{is_null, parse_value, ColumnStats, DataType};
 
@@ -30,6 +30,10 @@ struct ColumnAccumulator {
     min_len: Option<usize>,
     max_len: Option<usize>,
     unique_values: HashSet<String>,
+
+    // v1.2 stats
+    numeric_values: Vec<f64>,        // For median/percentile
+    value_counts: HashMap<String, usize>, // For top_n
 }
 
 impl ColumnAccumulator {
@@ -49,6 +53,8 @@ impl ColumnAccumulator {
             min_len: None,
             max_len: None,
             unique_values: HashSet::new(),
+            numeric_values: Vec::new(),
+            value_counts: HashMap::new(),
         }
     }
 
@@ -81,6 +87,7 @@ impl ColumnAccumulator {
             self.sum += num;
             self.sum_squares += num * num;
             self.numeric_count += 1;
+            self.numeric_values.push(num); // v1.2: collect for median/percentile
             self.min_numeric = Some(
                 self.min_numeric
                     .map_or(num, |m| if num < m { num } else { m }),
@@ -98,6 +105,9 @@ impl ColumnAccumulator {
         self.min_len = Some(self.min_len.map_or(len, |m| m.min(len)));
         self.max_len = Some(self.max_len.map_or(len, |m| m.max(len)));
         self.unique_values.insert(trimmed_str.clone());
+
+        // v1.2: track value frequencies for top_n
+        *self.value_counts.entry(trimmed_str.clone()).or_insert(0) += 1;
 
         self.min_string = Some(match &self.min_string {
             None => trimmed_str.clone(),
@@ -121,7 +131,7 @@ impl ColumnAccumulator {
         });
     }
 
-    fn finalize(self) -> ColumnStats {
+    fn finalize(mut self) -> ColumnStats {
         let total = self.count;
         let null_rate = if total > 0 {
             (self.null_count as f64) / (total as f64) * 100.0
@@ -130,6 +140,27 @@ impl ColumnAccumulator {
         };
 
         let data_type = self.data_type.unwrap_or(DataType::String);
+
+        // v1.2: Calculate percentiles (median, p25, p75)
+        let (median, p25, p75) = if !self.numeric_values.is_empty() {
+            self.numeric_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            (
+                Some(percentile(&self.numeric_values, 50.0)),
+                Some(percentile(&self.numeric_values, 25.0)),
+                Some(percentile(&self.numeric_values, 75.0)),
+            )
+        } else {
+            (None, None, None)
+        };
+
+        // v1.2: Calculate top values (top 5 most frequent)
+        let top_values = if !self.value_counts.is_empty() {
+            let mut counts: Vec<(String, usize)> = self.value_counts.into_iter().collect();
+            counts.sort_by(|a, b| b.1.cmp(&a.1)); // Sort by count descending
+            Some(counts.into_iter().take(5).collect())
+        } else {
+            None
+        };
 
         let (min, max, mean, sum, std) = match data_type {
             DataType::Integer | DataType::Float => {
@@ -179,7 +210,33 @@ impl ColumnAccumulator {
             min_len: self.min_len,
             max_len: self.max_len,
             unique_count: Some(self.unique_values.len()),
+            median,
+            p25,
+            p75,
+            top_values,
         }
+    }
+}
+
+/// Calculate percentile using linear interpolation
+fn percentile(sorted_data: &[f64], p: f64) -> f64 {
+    if sorted_data.is_empty() {
+        return 0.0;
+    }
+    if sorted_data.len() == 1 {
+        return sorted_data[0];
+    }
+
+    let n = sorted_data.len();
+    let rank = (p / 100.0) * (n - 1) as f64;
+    let lower_idx = rank.floor() as usize;
+    let upper_idx = rank.ceil() as usize;
+
+    if lower_idx == upper_idx {
+        sorted_data[lower_idx]
+    } else {
+        let weight = rank - lower_idx as f64;
+        sorted_data[lower_idx] * (1.0 - weight) + sorted_data[upper_idx] * weight
     }
 }
 
