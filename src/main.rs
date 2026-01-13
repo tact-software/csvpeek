@@ -16,18 +16,14 @@ fn main() -> Result<()> {
     let cli = Cli::parse_args();
 
     match &cli.command {
-        Some(Commands::Summary(args)) => {
-            commands::run_summary(&cli, args)?;
+        Some(Commands::Summary(_)) | None => {
+            commands::run_summary(&cli)?;
         }
-        Some(Commands::Schema(args)) => {
-            commands::run_schema(&cli, args)?;
+        Some(Commands::Schema(_)) => {
+            commands::run_schema(&cli)?;
         }
         Some(Commands::Guide(args)) => {
             guide::print_guide(args.topic.as_deref());
-        }
-        None => {
-            // Default to summary command
-            commands::run_summary(&cli, &cli::SummaryArgs::default())?;
         }
     }
 
@@ -62,7 +58,7 @@ mod commands {
         }
     }
 
-    pub fn run_summary(cli: &Cli, args: &cli::SummaryArgs) -> Result<()> {
+    pub fn run_summary(cli: &Cli) -> Result<()> {
         let file_path = cli
             .file
             .as_ref()
@@ -73,14 +69,14 @@ mod commands {
         let headers = reader.headers()?.clone();
 
         // Determine columns to process
-        let target_cols = if let Some(ref cols) = args.cols {
+        let target_cols = if let Some(ref cols) = cli.cols {
             cli::parse_columns(cols, &headers)?
         } else {
             headers.iter().map(|s| s.to_string()).collect()
         };
 
         // Build filter if specified
-        let filter = if let Some(ref where_clause) = args.where_clause {
+        let filter = if let Some(ref where_clause) = cli.where_clause {
             Some(Filter::parse(where_clause, &headers)?)
         } else {
             None
@@ -115,7 +111,7 @@ mod commands {
         let stats = collector.finalize();
 
         // Render output
-        let format = args.format.as_deref().unwrap_or("table");
+        let format = cli.format.as_deref().unwrap_or("table");
         let renderer = Renderer::new(OutputFormat::from_str(format)?)
             .with_output(cli.output.clone())
             .with_color(ColorMode::from_str(&cli.color));
@@ -123,14 +119,14 @@ mod commands {
             file_path,
             total_rows,
             matched_rows,
-            args.where_clause.as_deref(),
+            cli.where_clause.as_deref(),
             &stats,
         )?;
 
         Ok(())
     }
 
-    pub fn run_schema(cli: &Cli, args: &cli::SchemaArgs) -> Result<()> {
+    pub fn run_schema(cli: &Cli) -> Result<()> {
         let file_path = cli
             .file
             .as_ref()
@@ -152,7 +148,7 @@ mod commands {
         progress.finish();
         let schema = inferrer.finalize();
 
-        let format = args.format.as_deref().unwrap_or("table");
+        let format = cli.format.as_deref().unwrap_or("table");
         let renderer = Renderer::new(OutputFormat::from_str(format)?)
             .with_output(cli.output.clone())
             .with_color(ColorMode::from_str(&cli.color));

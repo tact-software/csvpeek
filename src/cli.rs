@@ -6,11 +6,11 @@ use crate::error::{ColumnSuggestion, CsvpeekError, find_similar_column};
 
 const MAIN_HELP: &str = r#"
 EXAMPLES:
-    csvp data.csv                         Show summary statistics (default)
-    csvp summary data.csv -c "name,age"   Analyze specific columns
-    csvp summary data.csv -w "age > 30"   Filter rows before analysis
-    csvp schema data.csv                  Show schema information
-    csvp data.csv -d ";" -e sjis          Semicolon-delimited, Shift_JIS
+    csvp data.csv                    Show summary statistics (default)
+    csvp data.csv -c "name,age"      Analyze specific columns
+    csvp data.csv -w "age > 30"      Filter rows before analysis
+    csvp schema data.csv             Show schema information
+    csvp data.csv -d ";" -e sjis     Semicolon-delimited, Shift_JIS
 
 OUTPUT FORMATS:
     -f table    Pretty table (default)
@@ -36,6 +36,18 @@ pub struct Cli {
     /// CSV file path
     #[arg(global = true)]
     pub file: Option<String>,
+
+    /// Columns to analyze (names, indices, or ranges like 0..5)
+    #[arg(long, short = 'c', global = true)]
+    pub cols: Option<String>,
+
+    /// Filter expression (e.g., "age > 30", "status == \"active\"")
+    #[arg(long = "where", short = 'w', global = true)]
+    pub where_clause: Option<String>,
+
+    /// Output format (table, json, ndjson, csv)
+    #[arg(long, short = 'f', global = true)]
+    pub format: Option<String>,
 
     /// Field delimiter character
     #[arg(long, short = 'd', global = true, default_value = ",")]
@@ -105,27 +117,15 @@ FILTER EXPRESSIONS (-w):
     Functions:  contains(name, "test"), is_null(email), matches(id, "^A\\d+")
 
 EXAMPLES:
-    csvp summary data.csv -c "0..5" -w "status == \"active\""
-    csvp summary data.csv -w "price > 100 && is_not_null(discount)"
+    csvp data.csv -c "0..5" -w "status == \"active\""
+    csvp data.csv -w "price > 100 && is_not_null(discount)"
 
 Run 'csvp guide filters' for complete filter syntax reference.
 "#;
 
 #[derive(Parser, Debug, Default, Clone)]
 #[command(after_long_help = SUMMARY_HELP)]
-pub struct SummaryArgs {
-    /// Comma-separated list of columns to analyze (names, indices, or ranges)
-    #[arg(long, short = 'c')]
-    pub cols: Option<String>,
-
-    /// Filter expression (e.g., "age > 30", "name == \"Alice\"")
-    #[arg(long = "where", short = 'w')]
-    pub where_clause: Option<String>,
-
-    /// Output format (table, json, ndjson, csv)
-    #[arg(long, short = 'f')]
-    pub format: Option<String>,
-}
+pub struct SummaryArgs {}
 
 const SCHEMA_HELP: &str = r#"
 SCHEMA INFORMATION:
@@ -148,11 +148,7 @@ EXAMPLES:
 
 #[derive(Parser, Debug, Default, Clone)]
 #[command(after_long_help = SCHEMA_HELP)]
-pub struct SchemaArgs {
-    /// Output format (table, json, ndjson, csv)
-    #[arg(long, short = 'f')]
-    pub format: Option<String>,
-}
+pub struct SchemaArgs {}
 
 pub fn parse_columns(cols_str: &str, headers: &StringRecord) -> Result<Vec<String>> {
     let header_vec: Vec<String> = headers.iter().map(|s| s.to_string()).collect();

@@ -42,7 +42,7 @@ fn print_filters_guide() {
         r#"FILTER EXPRESSIONS
 
 Filter expressions allow you to analyze only rows matching specific conditions.
-Use with: csvp summary data.csv -w "<expression>"
+Use with: csvp data.csv -w "<expression>"
 
 COMPARISON OPERATORS:
     ==          Equal               name == "Alice"
@@ -63,7 +63,7 @@ FUNCTIONS:
 
     matches(column, "regex")        Regular expression match
         Example: matches(email, "@example\\.com$")
-        Example: matches(id, "^[A-Z]\\d{4}$")
+        Example: matches(id, "^[A-Z]\\d{{4}}$")
 
     in(column, ["a", "b", "c"])     Value in list
         Example: in(status, ["active", "pending", "review"])
@@ -94,19 +94,19 @@ NUMERIC VALUES:
 
 EXAMPLES:
     # Simple comparison
-    csvp summary data.csv -w "age > 30"
+    csvp data.csv -w "age > 30"
 
     # String equality
-    csvp summary data.csv -w "status == \"active\""
+    csvp data.csv -w "status == \"active\""
 
     # Combined conditions
-    csvp summary data.csv -w "age >= 18 && age <= 65 && is_not_null(email)"
+    csvp data.csv -w "age >= 18 && age <= 65 && is_not_null(email)"
 
     # Using functions
-    csvp summary data.csv -w "contains(name, \"Corp\") && in(region, [\"US\", \"EU\"])"
+    csvp data.csv -w "contains(name, \"Corp\") && in(region, [\"US\", \"EU\"])"
 
     # Complex grouping
-    csvp summary data.csv -w "(type == \"A\" || type == \"B\") && price > 100"
+    csvp data.csv -w "(type == \"A\" || type == \"B\") && price > 100"
 "#
     );
 }
@@ -154,13 +154,13 @@ EXAMPLES:
     csvp data.csv
 
     # View statistics for specific columns
-    csvp summary data.csv -c "price,quantity,total"
+    csvp data.csv -c "price,quantity,total"
 
     # Export full statistics to JSON
-    csvp summary data.csv -f json -o stats.json
+    csvp data.csv -f json -o stats.json
 
     # Filter before computing statistics
-    csvp summary data.csv -w "year == 2024" -c "revenue,profit"
+    csvp data.csv -w "year == 2024" -c "revenue,profit"
 "#
     );
 }
@@ -197,16 +197,16 @@ NOTES:
 
 EXAMPLES:
     # Analyze first 10 columns
-    csvp summary data.csv -c "0..10"
+    csvp data.csv -c "0..10"
 
     # Analyze specific named columns
-    csvp summary data.csv -c "customer_id,order_date,total_amount"
+    csvp data.csv -c "customer_id,order_date,total_amount"
 
     # Mix of names and ranges
-    csvp summary data.csv -c "id,1..5,description"
+    csvp data.csv -c "id,1..5,description"
 
     # All columns from index 5 onwards (use total column count - 1)
-    csvp summary data.csv -c "5..=20"
+    csvp data.csv -c "5..=20"
 
 ERROR HANDLING:
     - Invalid index: "Column index 99 is out of range (max: 10)"
@@ -225,7 +225,7 @@ TABLE (default):
     Human-readable formatted table with colors (when terminal supports it).
     Best for interactive use.
 
-    csvp summary data.csv -f table
+    csvp data.csv -f table
 
     Example output:
     ┌──────────┬─────────┬───────┬───────┬────────┬─────┬─────┬───────┐
@@ -237,7 +237,7 @@ TABLE (default):
 JSON:
     Pretty-printed JSON array. Good for programmatic processing.
 
-    csvp summary data.csv -f json
+    csvp data.csv -f json
 
     Example output:
     [
@@ -252,7 +252,7 @@ JSON:
 NDJSON (Newline Delimited JSON):
     One JSON object per line. Best for streaming/large datasets.
 
-    csvp summary data.csv -f ndjson
+    csvp data.csv -f ndjson
 
     Example output:
     {{"column":"age","data_type":"Integer","count":1000,...}}
@@ -261,7 +261,7 @@ NDJSON (Newline Delimited JSON):
 CSV:
     CSV format with all statistics. Good for spreadsheets/further analysis.
 
-    csvp summary data.csv -f csv
+    csvp data.csv -f csv
 
     Includes additional columns not shown in table format:
     - p25, p75 (percentiles)
@@ -271,8 +271,8 @@ CSV:
 OUTPUT TO FILE:
     Use -o/--output to write to a file instead of stdout:
 
-    csvp summary data.csv -f json -o stats.json
-    csvp summary data.csv -f csv -o report.csv
+    csvp data.csv -f json -o stats.json
+    csvp data.csv -f csv -o report.csv
 
 COLOR CONTROL:
     Use --color to control colored output:
