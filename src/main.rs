@@ -2,6 +2,7 @@ mod cli;
 mod csv_reader;
 mod error;
 mod filter;
+mod guide;
 mod output;
 mod progress;
 mod schema;
@@ -20,6 +21,9 @@ fn main() -> Result<()> {
         }
         Some(Commands::Schema(args)) => {
             commands::run_schema(&cli, args)?;
+        }
+        Some(Commands::Guide(args)) => {
+            guide::print_guide(args.topic.as_deref());
         }
         None => {
             // Default to summary command

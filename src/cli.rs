@@ -4,9 +4,31 @@ use csv::StringRecord;
 
 use crate::error::{ColumnSuggestion, CsvpeekError, find_similar_column};
 
+const MAIN_HELP: &str = r#"
+EXAMPLES:
+    csvp data.csv                    Show summary statistics
+    csvp schema data.csv             Show schema information
+    csvp data.csv -c "name,age"      Analyze specific columns
+    csvp data.csv -w "age > 30"      Filter rows before analysis
+    csvp data.csv -d ";" -e sjis     Semicolon-delimited, Shift_JIS encoding
+
+OUTPUT FORMATS:
+    -f table    Pretty table (default)
+    -f json     JSON format
+    -f ndjson   Newline-delimited JSON
+    -f csv      CSV format
+
+For detailed help on specific topics, use:
+    csvp guide filters    Filter expression syntax
+    csvp guide stats      Available statistics
+    csvp guide columns    Column specification syntax
+    csvp guide formats    Output format details
+"#;
+
 #[derive(Parser, Debug)]
 #[command(name = "csvp")]
 #[command(author, version, about = "Fast CSV insights from the command line")]
+#[command(after_long_help = MAIN_HELP)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -54,26 +76,80 @@ pub enum Commands {
 
     /// Display schema information (column names, types, null rates)
     Schema(SchemaArgs),
+
+    /// Show detailed help for a specific topic
+    Guide(GuideArgs),
 }
 
+#[derive(Parser, Debug, Clone)]
+pub struct GuideArgs {
+    /// Topic to display help for (filters, stats, columns, formats, encoding)
+    #[arg(value_name = "TOPIC")]
+    pub topic: Option<String>,
+}
+
+const SUMMARY_HELP: &str = r#"
+STATISTICS COMPUTED:
+    Numeric columns: count, null%, unique, min, max, mean, median, std, p25, p75
+    String columns:  count, null%, unique, min_len, max_len, top values
+
+COLUMN SELECTION (-c):
+    -c "name,age"       By column names
+    -c "0,1,2"          By index (0-based)
+    -c "0..5"           Range (exclusive end)
+    -c "0..=5"          Range (inclusive end)
+
+FILTER EXPRESSIONS (-w):
+    Comparison: age > 30, name == "Alice", price <= 100
+    Logic:      age > 20 && age < 30, status == "A" || status == "B"
+    Functions:  contains(name, "test"), is_null(email), matches(id, "^A\\d+")
+
+EXAMPLES:
+    csvp summary data.csv -c "0..5" -w "status == \"active\""
+    csvp data.csv -w "price > 100 && is_not_null(discount)"
+
+Run 'csvp guide filters' for complete filter syntax reference.
+"#;
+
 #[derive(Parser, Debug, Default, Clone)]
+#[command(after_long_help = SUMMARY_HELP)]
 pub struct SummaryArgs {
-    /// Comma-separated list of columns to analyze
+    /// Comma-separated list of columns to analyze (names, indices, or ranges)
     #[arg(long, short = 'c')]
     pub cols: Option<String>,
 
-    /// Filter expression
+    /// Filter expression (e.g., "age > 30", "name == \"Alice\"")
     #[arg(long = "where", short = 'w')]
     pub where_clause: Option<String>,
 
-    /// Output format (table, json)
+    /// Output format (table, json, ndjson, csv)
     #[arg(long, short = 'f')]
     pub format: Option<String>,
 }
 
+const SCHEMA_HELP: &str = r#"
+SCHEMA INFORMATION:
+    column      Column name from header (or col0, col1... if --no-header)
+    type        Inferred type: Integer, Float, Boolean, or String
+    null%       Percentage of null/empty values
+    samples     First few unique non-null values
+
+TYPE INFERENCE:
+    Integer     All non-null values are integers
+    Float       Values contain decimals (or mix of int/float)
+    Boolean     All values are true/false (case-insensitive)
+    String      Any other values
+
+EXAMPLES:
+    csvp schema data.csv              Table format
+    csvp schema data.csv -f json      JSON format for programmatic use
+    csvp schema data.csv -f csv       CSV format for export
+"#;
+
 #[derive(Parser, Debug, Default, Clone)]
+#[command(after_long_help = SCHEMA_HELP)]
 pub struct SchemaArgs {
-    /// Output format (table, json)
+    /// Output format (table, json, ndjson, csv)
     #[arg(long, short = 'f')]
     pub format: Option<String>,
 }
