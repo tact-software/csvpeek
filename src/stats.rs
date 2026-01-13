@@ -1,5 +1,6 @@
 use anyhow::Result;
 use csv::StringRecord;
+use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 
 use crate::types::{is_null, parse_value, ColumnStats, DataType};
@@ -276,6 +277,10 @@ impl StatsCollector {
     }
 
     pub fn finalize(self) -> Vec<ColumnStats> {
-        self.columns.into_iter().map(|acc| acc.finalize()).collect()
+        // Use parallel iteration for finalizing columns (sorting, percentile calculation)
+        self.columns
+            .into_par_iter()
+            .map(|acc| acc.finalize())
+            .collect()
     }
 }

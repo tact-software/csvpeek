@@ -34,6 +34,11 @@ pub struct Cli {
     /// Color output control (auto, always, never)
     #[arg(long, global = true, default_value = "auto")]
     pub color: String,
+
+    /// Character encoding (auto-detect if not specified)
+    /// Supported: utf-8, shift_jis, euc-jp, gbk, big5, latin1, etc.
+    #[arg(long, short = 'e', global = true)]
+    pub encoding: Option<String>,
 }
 
 impl Cli {

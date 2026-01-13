@@ -44,6 +44,7 @@ mod commands {
         CsvOptions::new()
             .with_delimiter(delimiter)
             .with_no_header(cli.no_header)
+            .with_encoding(cli.encoding.clone())
     }
 
     fn parse_delimiter(s: &str) -> u8 {
