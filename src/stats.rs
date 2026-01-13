@@ -245,7 +245,7 @@ fn percentile(sorted_data: &[f64], p: f64) -> f64 {
 fn format_number(v: f64, dtype: DataType) -> String {
     match dtype {
         DataType::Integer => format!("{}", v as i64),
-        _ => format!("{:.6}", v)
+        _ => format!("{v:.6}")
             .trim_end_matches('0')
             .trim_end_matches('.')
             .to_string(),

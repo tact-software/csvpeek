@@ -66,8 +66,7 @@ impl CsvReader {
             let (decoded, _, had_errors) = encoding.decode(&bytes);
             if had_errors {
                 eprintln!(
-                    "Warning: Some characters could not be decoded with encoding '{}'",
-                    enc_name
+                    "Warning: Some characters could not be decoded with encoding '{enc_name}'"
                 );
             }
             decoded.into_owned()
@@ -100,7 +99,7 @@ impl CsvReader {
                     let count = record.len();
                     let mut headers = StringRecord::new();
                     for i in 0..count {
-                        headers.push_field(&format!("col{}", i));
+                        headers.push_field(&format!("col{i}"));
                     }
                     self.headers = Some(headers);
                 } else {
@@ -174,8 +173,7 @@ fn lookup_encoding(name: &str) -> Result<&'static Encoding> {
             // Try encoding_rs lookup
             Encoding::for_label(name.as_bytes()).ok_or_else(|| {
                 anyhow::anyhow!(
-                    "Unknown encoding: '{}'. Supported: utf-8, shift_jis, euc-jp, gbk, big5, latin1, etc.",
-                    name
+                    "Unknown encoding: '{name}'. Supported: utf-8, shift_jis, euc-jp, gbk, big5, latin1, etc."
                 )
             })?
         }

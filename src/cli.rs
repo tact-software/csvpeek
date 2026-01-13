@@ -201,12 +201,12 @@ fn parse_range(s: &str, headers: &[String]) -> Result<Option<Vec<String>>> {
     // Check for inclusive range (0..=5)
     if let Some((start_str, end_str)) = s.split_once("..=") {
         let start: usize = start_str.trim().parse().map_err(|_| {
-            CsvpeekError::InvalidFilter(format!("Invalid range start: {}", start_str))
+            CsvpeekError::InvalidFilter(format!("Invalid range start: {start_str}"))
         })?;
         let end: usize = end_str
             .trim()
             .parse()
-            .map_err(|_| CsvpeekError::InvalidFilter(format!("Invalid range end: {}", end_str)))?;
+            .map_err(|_| CsvpeekError::InvalidFilter(format!("Invalid range end: {end_str}")))?;
 
         if end >= headers.len() {
             return Err(CsvpeekError::ColumnIndexOutOfRange {
@@ -223,12 +223,12 @@ fn parse_range(s: &str, headers: &[String]) -> Result<Option<Vec<String>>> {
     // Check for exclusive range (0..5)
     if let Some((start_str, end_str)) = s.split_once("..") {
         let start: usize = start_str.trim().parse().map_err(|_| {
-            CsvpeekError::InvalidFilter(format!("Invalid range start: {}", start_str))
+            CsvpeekError::InvalidFilter(format!("Invalid range start: {start_str}"))
         })?;
         let end: usize = end_str
             .trim()
             .parse()
-            .map_err(|_| CsvpeekError::InvalidFilter(format!("Invalid range end: {}", end_str)))?;
+            .map_err(|_| CsvpeekError::InvalidFilter(format!("Invalid range end: {end_str}")))?;
 
         if end > headers.len() {
             return Err(CsvpeekError::ColumnIndexOutOfRange {

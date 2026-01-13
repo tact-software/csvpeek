@@ -169,7 +169,7 @@ fn parse_function(
         let (col, pattern) = parse_func_args(inner)?;
         validate_column(&col, columns)?;
         let regex = Regex::new(&pattern).map_err(|e| {
-            CsvpeekError::InvalidFilter(format!("Invalid regex pattern '{}': {}", pattern, e))
+            CsvpeekError::InvalidFilter(format!("Invalid regex pattern '{pattern}': {e}"))
         })?;
         return Ok(Some(Expr::Matches(col, regex)));
     }
@@ -263,7 +263,7 @@ fn parse_comparison(s: &str, columns: &std::collections::HashMap<String, usize>)
         }
     }
 
-    Err(CsvpeekError::InvalidFilter(format!("Cannot parse expression: {}", s)).into())
+    Err(CsvpeekError::InvalidFilter(format!("Cannot parse expression: {s}")).into())
 }
 
 fn validate_column(col: &str, columns: &std::collections::HashMap<String, usize>) -> Result<()> {

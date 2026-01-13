@@ -5,7 +5,7 @@ fn csvp() -> Command {
 }
 
 fn fixtures_path(name: &str) -> String {
-    format!("tests/fixtures/{}", name)
+    format!("tests/fixtures/{name}")
 }
 
 mod summary_command {

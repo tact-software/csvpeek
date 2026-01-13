@@ -1,5 +1,4 @@
 /// Topic-based detailed help system
-
 pub fn print_guide(topic: Option<&str>) {
     match topic {
         Some("filters") | Some("filter") => print_filters_guide(),
@@ -8,7 +7,7 @@ pub fn print_guide(topic: Option<&str>) {
         Some("formats") | Some("format") => print_formats_guide(),
         Some("encoding") | Some("encodings") => print_encoding_guide(),
         Some(unknown) => {
-            eprintln!("Unknown topic: {}", unknown);
+            eprintln!("Unknown topic: {unknown}");
             eprintln!();
             print_topics_list();
         }

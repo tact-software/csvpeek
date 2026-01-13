@@ -22,8 +22,7 @@ impl OutputFormat {
             "ndjson" => Ok(OutputFormat::NdJson),
             "csv" => Ok(OutputFormat::Csv),
             _ => Err(anyhow::anyhow!(
-                "Unknown output format: {}. Supported: table, json, ndjson, csv",
-                s
+                "Unknown output format: {s}. Supported: table, json, ndjson, csv"
             )),
         }
     }
@@ -138,10 +137,10 @@ impl Renderer {
                 writeln!(w, "{} {}", "filter:".cyan(), f)?;
             }
         } else {
-            writeln!(w, "file: {}", file)?;
-            writeln!(w, "rows: {} (matched: {})", total_rows, matched_rows)?;
+            writeln!(w, "file: {file}")?;
+            writeln!(w, "rows: {total_rows} (matched: {matched_rows})")?;
             if let Some(f) = filter {
-                writeln!(w, "filter: {}", f)?;
+                writeln!(w, "filter: {f}")?;
             }
         }
         writeln!(w)?;
@@ -177,17 +176,17 @@ impl Renderer {
                 Cell::new(stat.max.as_deref().unwrap_or("-")),
                 Cell::new(
                     stat.mean
-                        .map(|m| format!("{:.2}", m))
+                        .map(|m| format!("{m:.2}"))
                         .unwrap_or_else(|| "-".to_string()),
                 ),
                 Cell::new(
                     stat.median
-                        .map(|m| format!("{:.2}", m))
+                        .map(|m| format!("{m:.2}"))
                         .unwrap_or_else(|| "-".to_string()),
                 ),
                 Cell::new(
                     stat.std
-                        .map(|s| format!("{:.2}", s))
+                        .map(|s| format!("{s:.2}"))
                         .unwrap_or_else(|| "-".to_string()),
                 ),
             ]);
@@ -203,7 +202,7 @@ impl Renderer {
             for stat in stats {
                 if let Some(ref top) = stat.top_values {
                     let top_str: Vec<String> =
-                        top.iter().map(|(v, c)| format!("{}({})", v, c)).collect();
+                        top.iter().map(|(v, c)| format!("{v}({c})")).collect();
                     writeln!(w, "  {}: {}", stat.name, top_str.join(", "))?;
                 }
             }
@@ -215,7 +214,7 @@ impl Renderer {
     fn render_summary_json(&self, stats: &[ColumnStats]) -> Result<()> {
         let mut w = self.get_writer()?;
         let json = serde_json::to_string_pretty(stats)?;
-        writeln!(w, "{}", json)?;
+        writeln!(w, "{json}")?;
         Ok(())
     }
 
@@ -223,7 +222,7 @@ impl Renderer {
         let mut w = self.get_writer()?;
         for stat in stats {
             let json = serde_json::to_string(stat)?;
-            writeln!(w, "{}", json)?;
+            writeln!(w, "{json}")?;
         }
         Ok(())
     }
@@ -246,12 +245,12 @@ impl Renderer {
                 stat.unique_count.map_or(String::new(), |v| v.to_string()),
                 stat.min.as_deref().map_or(String::new(), escape_csv),
                 stat.max.as_deref().map_or(String::new(), escape_csv),
-                stat.mean.map_or(String::new(), |v| format!("{:.6}", v)),
-                stat.median.map_or(String::new(), |v| format!("{:.6}", v)),
-                stat.p25.map_or(String::new(), |v| format!("{:.6}", v)),
-                stat.p75.map_or(String::new(), |v| format!("{:.6}", v)),
-                stat.sum.map_or(String::new(), |v| format!("{:.6}", v)),
-                stat.std.map_or(String::new(), |v| format!("{:.6}", v)),
+                stat.mean.map_or(String::new(), |v| format!("{v:.6}")),
+                stat.median.map_or(String::new(), |v| format!("{v:.6}")),
+                stat.p25.map_or(String::new(), |v| format!("{v:.6}")),
+                stat.p75.map_or(String::new(), |v| format!("{v:.6}")),
+                stat.sum.map_or(String::new(), |v| format!("{v:.6}")),
+                stat.std.map_or(String::new(), |v| format!("{v:.6}")),
                 stat.min_len.map_or(String::new(), |v| v.to_string()),
                 stat.max_len.map_or(String::new(), |v| v.to_string()),
             )?;
@@ -276,7 +275,7 @@ impl Renderer {
             writeln!(w, "{} {}", "file:".cyan(), file)?;
             writeln!(w, "{} {}", "columns:".cyan(), schema.len())?;
         } else {
-            writeln!(w, "file: {}", file)?;
+            writeln!(w, "file: {file}")?;
             writeln!(w, "columns: {}", schema.len())?;
         }
         writeln!(w)?;
@@ -316,7 +315,7 @@ impl Renderer {
     fn render_schema_json(&self, schema: &[ColumnSchema]) -> Result<()> {
         let mut w = self.get_writer()?;
         let json = serde_json::to_string_pretty(schema)?;
-        writeln!(w, "{}", json)?;
+        writeln!(w, "{json}")?;
         Ok(())
     }
 
@@ -324,7 +323,7 @@ impl Renderer {
         let mut w = self.get_writer()?;
         for col in schema {
             let json = serde_json::to_string(col)?;
-            writeln!(w, "{}", json)?;
+            writeln!(w, "{json}")?;
         }
         Ok(())
     }
