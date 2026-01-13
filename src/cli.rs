@@ -26,6 +26,10 @@ pub struct Cli {
     /// Output file path (default: stdout)
     #[arg(long, short = 'o', global = true)]
     pub output: Option<String>,
+
+    /// Suppress progress display
+    #[arg(long, short = 'q', global = true, default_value = "false")]
+    pub quiet: bool,
 }
 
 impl Cli {

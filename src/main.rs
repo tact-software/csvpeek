@@ -3,6 +3,7 @@ mod csv_reader;
 mod error;
 mod filter;
 mod output;
+mod progress;
 mod schema;
 mod stats;
 mod types;
@@ -34,6 +35,7 @@ mod commands {
     use crate::csv_reader::{CsvOptions, CsvReader};
     use crate::filter::Filter;
     use crate::output::{OutputFormat, Renderer};
+    use crate::progress::ProgressTracker;
     use crate::schema::SchemaInferrer;
     use crate::stats::StatsCollector;
 
@@ -78,14 +80,18 @@ mod commands {
             None
         };
 
-        // Collect statistics
+        // Collect statistics with progress tracking
         let mut collector = StatsCollector::new(&target_cols, &headers);
         let mut total_rows = 0u64;
         let mut matched_rows = 0u64;
+        let mut progress = ProgressTracker::new(file_path, cli.quiet);
 
         for result in reader.records() {
             let record = result?;
             total_rows += 1;
+
+            // Update progress
+            progress.update(&record);
 
             // Apply filter
             if let Some(ref f) = filter {
@@ -97,6 +103,8 @@ mod commands {
             matched_rows += 1;
             collector.add_record(&record, &headers)?;
         }
+
+        progress.finish();
 
         let stats = collector.finalize();
 
@@ -125,12 +133,15 @@ mod commands {
         let headers = reader.headers()?.clone();
 
         let mut inferrer = SchemaInferrer::new(&headers);
+        let mut progress = ProgressTracker::new(file_path, cli.quiet);
 
         for result in reader.records() {
             let record = result?;
+            progress.update(&record);
             inferrer.add_record(&record)?;
         }
 
+        progress.finish();
         let schema = inferrer.finalize();
 
         let format = args.format.as_deref().unwrap_or("table");
