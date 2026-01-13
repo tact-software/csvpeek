@@ -46,6 +46,7 @@ pub struct ColumnSchema {
     pub null_count: u64,
     pub total_count: u64,
     pub null_rate: f64,
+    pub sample_values: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

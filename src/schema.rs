@@ -7,6 +7,8 @@ pub struct SchemaInferrer {
     columns: Vec<ColumnTypeAccumulator>,
 }
 
+const MAX_SAMPLE_VALUES: usize = 3;
+
 struct ColumnTypeAccumulator {
     name: String,
     total_count: u64,
@@ -15,6 +17,7 @@ struct ColumnTypeAccumulator {
     float_count: u64,
     boolean_count: u64,
     string_count: u64,
+    sample_values: Vec<String>,
 }
 
 impl ColumnTypeAccumulator {
@@ -27,6 +30,7 @@ impl ColumnTypeAccumulator {
             float_count: 0,
             boolean_count: 0,
             string_count: 0,
+            sample_values: Vec::new(),
         }
     }
 
@@ -36,6 +40,14 @@ impl ColumnTypeAccumulator {
         if is_null(value) {
             self.null_count += 1;
             return;
+        }
+
+        // Collect sample values (first N unique non-null values)
+        let trimmed = value.trim().to_string();
+        if self.sample_values.len() < MAX_SAMPLE_VALUES
+            && !self.sample_values.contains(&trimmed)
+        {
+            self.sample_values.push(trimmed);
         }
 
         let (dtype, _) = parse_value(value);
@@ -87,6 +99,7 @@ impl ColumnTypeAccumulator {
             null_count: self.null_count,
             total_count: self.total_count,
             null_rate,
+            sample_values: self.sample_values,
         }
     }
 }

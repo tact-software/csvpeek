@@ -1,5 +1,6 @@
 use anyhow::Result;
 use csv::StringRecord;
+use regex::Regex;
 
 use crate::error::CsvpeekError;
 use crate::types::is_null;
@@ -17,6 +18,7 @@ enum Expr {
     Not(Box<Expr>),
     Compare(String, CompareOp, Value),
     Contains(String, String),
+    Matches(String, Regex),
     In(String, Vec<String>),
     IsNull(String),
     IsNotNull(String),
@@ -162,6 +164,17 @@ fn parse_function(
         return Ok(Some(Expr::IsNotNull(col)));
     }
 
+    // matches(col, "regex_pattern")
+    if s.starts_with("matches(") && s.ends_with(')') {
+        let inner = &s[8..s.len() - 1];
+        let (col, pattern) = parse_func_args(inner)?;
+        validate_column(&col, columns)?;
+        let regex = Regex::new(&pattern).map_err(|e| {
+            CsvpeekError::InvalidFilter(format!("Invalid regex pattern '{}': {}", pattern, e))
+        })?;
+        return Ok(Some(Expr::Matches(col, regex)));
+    }
+
     Ok(None)
 }
 
@@ -282,6 +295,11 @@ fn eval_expr(
             let idx = columns.get(col).copied().unwrap_or(0);
             let cell = record.get(idx).unwrap_or("");
             Ok(cell.contains(substr.as_str()))
+        }
+        Expr::Matches(col, regex) => {
+            let idx = columns.get(col).copied().unwrap_or(0);
+            let cell = record.get(idx).unwrap_or("");
+            Ok(regex.is_match(cell))
         }
         Expr::In(col, vals) => {
             let idx = columns.get(col).copied().unwrap_or(0);

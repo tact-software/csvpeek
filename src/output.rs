@@ -180,13 +180,20 @@ impl Renderer {
             Cell::new("column"),
             Cell::new("type"),
             Cell::new("null%"),
+            Cell::new("samples"),
         ]);
 
         for col in schema {
+            let samples = if col.sample_values.is_empty() {
+                "-".to_string()
+            } else {
+                col.sample_values.join(", ")
+            };
             table.add_row(vec![
                 Cell::new(&col.name),
                 Cell::new(col.inferred_type.to_string()),
                 Cell::new(format!("{:.1}%", col.null_rate)),
+                Cell::new(samples),
             ]);
         }
 
@@ -212,16 +219,18 @@ impl Renderer {
 
     fn render_schema_csv(&self, schema: &[ColumnSchema]) -> Result<()> {
         let mut w = self.get_writer()?;
-        writeln!(w, "column,type,null_count,total_count,null_rate")?;
+        writeln!(w, "column,type,null_count,total_count,null_rate,sample_values")?;
         for col in schema {
+            let samples = col.sample_values.join("; ");
             writeln!(
                 w,
-                "{},{},{},{},{:.2}",
+                "{},{},{},{},{:.2},{}",
                 escape_csv(&col.name),
                 col.inferred_type,
                 col.null_count,
                 col.total_count,
                 col.null_rate,
+                escape_csv(&samples),
             )?;
         }
         Ok(())
