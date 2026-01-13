@@ -346,3 +346,210 @@ fn eval_compare(cell: &str, op: &CompareOp, val: &Value) -> Result<bool> {
         }),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_headers(names: &[&str]) -> StringRecord {
+        let mut record = StringRecord::new();
+        for name in names {
+            record.push_field(name);
+        }
+        record
+    }
+
+    fn make_record(values: &[&str]) -> StringRecord {
+        let mut record = StringRecord::new();
+        for value in values {
+            record.push_field(value);
+        }
+        record
+    }
+
+    #[test]
+    fn test_filter_equals_string() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("name == \"Alice\"", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Bob", "30"]);
+
+        assert!(filter.matches(&record1, &headers).unwrap());
+        assert!(!filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_equals_number() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("age == 25", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Bob", "30"]);
+
+        assert!(filter.matches(&record1, &headers).unwrap());
+        assert!(!filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_greater_than() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("age > 25", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Bob", "30"]);
+
+        assert!(!filter.matches(&record1, &headers).unwrap());
+        assert!(filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_less_than_or_equal() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("age <= 25", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Bob", "30"]);
+
+        assert!(filter.matches(&record1, &headers).unwrap());
+        assert!(!filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_not_equals() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("name != \"Alice\"", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Bob", "30"]);
+
+        assert!(!filter.matches(&record1, &headers).unwrap());
+        assert!(filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_and() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("age > 20 && age < 30", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Bob", "35"]);
+
+        assert!(filter.matches(&record1, &headers).unwrap());
+        assert!(!filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_or() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("name == \"Alice\" || name == \"Bob\"", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Charlie", "30"]);
+
+        assert!(filter.matches(&record1, &headers).unwrap());
+        assert!(!filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_not() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("!name == \"Alice\"", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Bob", "30"]);
+
+        assert!(!filter.matches(&record1, &headers).unwrap());
+        assert!(filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_contains() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("contains(name, \"lic\")", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Bob", "30"]);
+
+        assert!(filter.matches(&record1, &headers).unwrap());
+        assert!(!filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_in() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("in(name, [\"Alice\", \"Bob\"])", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Charlie", "30"]);
+
+        assert!(filter.matches(&record1, &headers).unwrap());
+        assert!(!filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_is_null() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("is_null(age)", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", ""]);
+        let record2 = make_record(&["Bob", "30"]);
+        let record3 = make_record(&["Charlie", "null"]);
+
+        assert!(filter.matches(&record1, &headers).unwrap());
+        assert!(!filter.matches(&record2, &headers).unwrap());
+        assert!(filter.matches(&record3, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_is_not_null() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("is_not_null(age)", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", ""]);
+        let record2 = make_record(&["Bob", "30"]);
+
+        assert!(!filter.matches(&record1, &headers).unwrap());
+        assert!(filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_matches_regex() {
+        let headers = make_headers(&["name", "age"]);
+        let filter = Filter::parse("matches(name, \"^A\")", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "25"]);
+        let record2 = make_record(&["Bob", "30"]);
+
+        assert!(filter.matches(&record1, &headers).unwrap());
+        assert!(!filter.matches(&record2, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_parentheses() {
+        let headers = make_headers(&["name", "age", "active"]);
+        let filter = Filter::parse("(age > 25 && age < 35) || name == \"Eve\"", &headers).unwrap();
+
+        let record1 = make_record(&["Alice", "30", "true"]);
+        let record2 = make_record(&["Bob", "20", "true"]);
+        let record3 = make_record(&["Eve", "40", "false"]);
+
+        assert!(filter.matches(&record1, &headers).unwrap());
+        assert!(!filter.matches(&record2, &headers).unwrap());
+        assert!(filter.matches(&record3, &headers).unwrap());
+    }
+
+    #[test]
+    fn test_filter_invalid_column() {
+        let headers = make_headers(&["name", "age"]);
+        let result = Filter::parse("invalid_col == 5", &headers);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_filter_invalid_regex() {
+        let headers = make_headers(&["name", "age"]);
+        let result = Filter::parse("matches(name, \"[invalid\")", &headers);
+        assert!(result.is_err());
+    }
+}

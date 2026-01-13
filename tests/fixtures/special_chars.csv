@@ -1,0 +1,6 @@
+id,name,description,amount
+1,John Doe,"Description with, comma",100
+2,Jane Smith,"Line with ""quotes""",200
+3,Bob Lee,"Multi
+line text",300
+4,Alice Brown,Normal text,400

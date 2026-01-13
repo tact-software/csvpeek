@@ -1,0 +1,7 @@
+id,name,age,city,score
+1,Alice,25,Tokyo,85
+2,Bob,,Osaka,
+3,Charlie,35,null,92
+4,Diana,NA,Nagoya,78
+5,Eve,32,N/A,88
+6,Frank,28,,

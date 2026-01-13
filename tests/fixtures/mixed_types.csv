@@ -1,0 +1,6 @@
+id,value,description,flag
+1,100,text value,true
+2,200.5,another text,false
+3,text,not a number,true
+4,300,mixed,false
+5,400.25,data,true
