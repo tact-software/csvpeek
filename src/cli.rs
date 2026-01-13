@@ -6,11 +6,11 @@ use crate::error::{ColumnSuggestion, CsvpeekError, find_similar_column};
 
 const MAIN_HELP: &str = r#"
 EXAMPLES:
-    csvp data.csv                    Show summary statistics
-    csvp schema data.csv             Show schema information
-    csvp data.csv -c "name,age"      Analyze specific columns
-    csvp data.csv -w "age > 30"      Filter rows before analysis
-    csvp data.csv -d ";" -e sjis     Semicolon-delimited, Shift_JIS encoding
+    csvp data.csv                         Show summary statistics (default)
+    csvp summary data.csv -c "name,age"   Analyze specific columns
+    csvp summary data.csv -w "age > 30"   Filter rows before analysis
+    csvp schema data.csv                  Show schema information
+    csvp data.csv -d ";" -e sjis          Semicolon-delimited, Shift_JIS
 
 OUTPUT FORMATS:
     -f table    Pretty table (default)
@@ -106,7 +106,7 @@ FILTER EXPRESSIONS (-w):
 
 EXAMPLES:
     csvp summary data.csv -c "0..5" -w "status == \"active\""
-    csvp data.csv -w "price > 100 && is_not_null(discount)"
+    csvp summary data.csv -w "price > 100 && is_not_null(discount)"
 
 Run 'csvp guide filters' for complete filter syntax reference.
 "#;
